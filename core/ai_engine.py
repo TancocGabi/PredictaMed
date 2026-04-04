@@ -14,8 +14,23 @@ from google import genai
 from prophet.serialize import model_to_json, model_from_json
 import json
 from data.keys import Keys
+from api_parser import parse_api
 
 global model 
+
+def prediction (date, medie):
+    valoare_prezisa = date['yhat'].iloc[0]
+
+    diferenta_procentuala = ((valoare_prezisa - medie) / medie) * 100
+
+    data_tinta = date['ds'].iloc[0].date(),
+    vreme_temp = date['temp'].iloc[0],
+    vreme_precip = date['precip'].iloc[0],
+    vreme_vant = date['windspeed'].iloc[0]
+   
+    extra_data = [data_tinta, vreme_temp, vreme_precip, vreme_vant]
+
+    return [diferenta_procentuala, extra_data]
 
 def train():
     base_path = os.path.dirname(__file__)
@@ -47,40 +62,63 @@ def train():
             json.dump(model_to_json(model), f)
         print("Modelul a fost antrenat si salvat cu succes!")
 
-    date_viitor = pd.DataFrame({
-        'ds': ['2026-05-10'],    
-        'temp': [22.5], 
-        'humidity': [50.0],
-        'precip': [0.0],
-        'snow': [0.0],
-        'windspeed': [15.2],
-        'preciptype_rain': [0.0], 
-        'preciptype_snow': [0.0]
-        })
+    # date_viitor = pd.DataFrame({
+    #     'ds': ['2026-05-10'],    
+    #     'temp': [22.5], 
+    #     'humidity': [50.0],
+    #     'precip': [0.0],
+    #     'snow': [0.0],
+    #     'windspeed': [15.2],
+    #     'preciptype_rain': [0.0], 
+    #     'preciptype_snow': [0.0]
+    #     })
 
-    date_viitor['ds'] = pd.to_datetime(date_viitor['ds'])
+    # date_viitor['ds'] = pd.to_datetime(date_viitor['ds'])
 
-    predictie = model.predict(date_viitor)
+    date_viitor = parse_api(45.6427, 25.5887, "2026-04-01", "2026-04-01")
+
+    predictie_centru = model.predict(date_viitor[0])
+
+    predictie_nord = model.predict(date_viitor[1])
+
+    predictie_sud = model.predict(date_viitor[2])
+
+    predictie_est = model.predict(date_viitor[3])
+
+    predictie_vest = model.predict(date_viitor[4])
 
     medie = data['y'].mean()
 
-    valoare_prezisa = predictie['yhat'].iloc[0]
+    predictions = [
+        prediction (predictie_centru, medie),
+        prediction (predictie_nord, medie),
+        prediction (predictie_sud, medie),
+        prediction (predictie_est, medie),
+        prediction (predictie_vest, medie)
+    ]
 
-    diferenta_procentuala = ((valoare_prezisa - medie) / medie) * 100
+    diferenta_procentuala, extra_data = predictions[0]
+    for pr in predictions:
+        if pr[0] > diferenta_procentuala:
+            diferenta_procentuala, extra_data = pr
+    
 
-    data_tinta = date_viitor['ds'].iloc[0].date()
-    vreme_temp = date_viitor['temp'].iloc[0]
-    vreme_precip = date_viitor['precip'].iloc[0]
-    vreme_vant = date_viitor['windspeed'].iloc[0]
+ 
 
+    #ce algoritm are prophet in spate
     # Datele de la Prophet
-    pacienti_estimati = int(valoare_prezisa)
-    pacienti_medie = int(medie)
+    # pacienti_estimati = int(valoare_prezisa)
+    # pacienti_medie = int(medie)
     procent = round(diferenta_procentuala, 1)
 
-    param_list = [data_tinta, vreme_temp, vreme_precip, vreme_vant, pacienti_estimati, pacienti_medie, procent]
+    extra_data.append(procent)
+    param_list = extra_data
+
+    print (param_list)
 
     return param_list
+
+
 
 def llm_setup():
     param_list = train()
@@ -90,7 +128,7 @@ def llm_setup():
     Sarcina ta este să interpretezi următoarele date și să oferi un scurt raport de pregătire pentru personalul de la primiri urgențe.
 
     DATELE PENTRU ZIUA DE {param_list[0]}:
-    - Variație față de medie: {param_list[6]}% 
+    - Variație față de medie: {param_list[4]}% 
 
     CONDIȚII METEO PROGNOZATE:
     - Temperatură: {param_list[1]}°C

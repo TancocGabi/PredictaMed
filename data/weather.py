@@ -1,7 +1,14 @@
+import os
+import sys
 import requests
 import pandas as pd
 
-from data_class.weatherData import WeatherData
+base_path = os.path.dirname(os.path.dirname(__file__))
+
+if base_path not in sys.path:
+    sys.path.append(base_path)
+
+from data.data_class.weatherData import WeatherData
 
 def get_daily_weather(lat, lon, start_date, end_date):
     url = "https://api.open-meteo.com/v1/forecast"
@@ -91,8 +98,8 @@ def get_area_weather(lat, lon, start_date, end_date):
 
 # print("\n--- Vreme pe zone ---\n")
 
-df_area = get_area_weather(45.6427, 25.5887, "2026-04-01", "2026-04-05")
-for area, weather_list in df_area.items():
-    print(f"Zona: {area}")
-    for weather in weather_list:
-        print(weather)
+# df_area = get_area_weather(45.6427, 25.5887, "2026-04-01", "2026-04-05")
+# for area, weather_list in df_area.items():
+#     print(f"Zona: {area}")
+#     for weather in weather_list:
+#         print(weather)
