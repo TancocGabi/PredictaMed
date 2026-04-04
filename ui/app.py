@@ -169,39 +169,8 @@ if st.session_state.analiza_vizibila:
 
         col_chart, col_explain = st.columns([2, 1])
 
-        with col_chart:
-            st.subheader("📈 Predicție Flux Pacienți (Următoarele 24h)")
-            chart_data = pd.DataFrame({
-                'Ora': [f"{i}:00" for i in range(24)],
-                'Pacienți Estimați': np.random.randint(15, 60 if risc > 50 else 30, size=24)
-            })
-            fig = px.area(chart_data, x='Ora', y='Pacienți Estimați', 
-                          color_discrete_sequence=['#ff4b4b' if risc > 50 else '#00cc96'])
-            fig.update_layout(margin=dict(l=0, r=0, t=0, b=0), height=300)
-            st.plotly_chart(fig, use_container_width=True)
 
-        with col_explain:
-            st.subheader("🔍 Explicație AI")
-            if risc > 50:
-                html_error = f"""
-                <div style="background-color: rgba(255, 75, 75, 0.1); border-left: 5px solid #ff4b4b; padding: 25px; border-radius: 5px;">
-                    <p style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; font-size: 1.3rem; line-height: 1.7; color: var(--text-color); margin: 0;">
-                        <strong style="color: #ff4b4b; font-size: 1.5rem;">🚨 Alertă Contextuală:</strong><br><br>
-                        Modelul a detectat o anomalie geospațială. Pe baza datelor de context pentru <strong>{oras_afisare}</strong>, se anticipează o suprasolicitare pe secția de <strong>Ortopedie</strong> din cauza condițiilor meteo severe preconizate.
-                    </p>
-                </div>
-                """
-                st.markdown(html_error, unsafe_allow_html=True)
-            else:
-                html_success = f"""
-                <div style="background-color: rgba(0, 204, 150, 0.1); border-left: 5px solid #00cc96; padding: 25px; border-radius: 5px;">
-                    <p style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; font-size: 1.3rem; line-height: 1.7; color: var(--text-color); margin: 0;">
-                        <strong style="color: #00cc96; font-size: 1.5rem;">✅ Status Optim:</strong><br><br>
-                        Parametrii pentru <strong>{oras_afisare}</strong> sunt stabili. Fluxul prognozat urmează trendul istoric normal al unității medicale.
-                    </p>
-                </div>
-                """
-                st.markdown(html_success, unsafe_allow_html=True)
+    
 
     # ====== TAB 2: SIMULATOR WHAT-IF ======
     with tab_simulator:
