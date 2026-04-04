@@ -1,8 +1,8 @@
 import requests
 from data_class.eventsData import EventsData
+from keys import Keys
 
 ###nu uita nu lasa aici
-api_key1 = "ZGAvkjKU7f1GfWaNLRgX9c_ISOYXKQ8UY0hlqaiv"
 
 
 #Trimite lista de evenimente
@@ -53,7 +53,7 @@ def get_romania_events(lat, lon, api_key, start_date="2026-04-01", end_date="202
 
 #Testem pe Bucuresti
 
-# response = get_romania_events(44.4659572,26.0740855, api_key1, "2026-04-01", "2026-05-10")
+response = get_romania_events(44.4659572,26.0740855, Keys.EVENT_API_KEY, "2026-04-01", "2026-05-10")
 
-# for event in response:
-#     print(event)
+for event in response:
+    print(event)

@@ -1,0 +1,3 @@
+class Keys:
+    AI_KEY = 'AIzaSyA2wWs0_hVQWeYC8mLNCFrGj-y3t1L9fAo'
+    EVENT_API_KEY = 'ZGAvkjKU7f1GfWaNLRgX9c_ISOYXKQ8UY0hlqaiv'
