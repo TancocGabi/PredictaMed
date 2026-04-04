@@ -37,7 +37,7 @@ def get_daily_weather(lat, lon, start_date, end_date):
                 temperature_max=row['temperature_2m_max'],
                 humidity=row['relative_humidity_2m_max'],
                 wind_speed=row['windspeed_10m_max'],
-                weather_code=row['weathercode'],
+                weather_code=get_weather_description(row['weathercode']),
                 date_str=str(row['time'])
             )
             # Adaugam campuri extra daca clasa WeatherData permite, 
@@ -47,6 +47,22 @@ def get_daily_weather(lat, lon, start_date, end_date):
             weatherList.append(w_data)
         return weatherList
     return None
+
+def get_weather_description(code):
+    wmo_codes = {
+        0: "Clear sky",
+        1: "Mainly clear", 2: "Partly cloudy", 3: "Overcast",
+        45: "Fog", 48: "Depositing rime fog",
+        51: "Light drizzle", 53: "Moderate drizzle", 55: "Dense drizzle",
+        61: "Slight rain", 63: "Moderate rain", 65: "Heavy rain",
+        66: "Light freezing rain", 67: "Heavy freezing rain",
+        71: "Slight snow fall", 73: "Moderate snow fall", 75: "Heavy snow fall",
+        77: "Snow grains",
+        80: "Slight rain showers", 81: "Moderate rain showers", 82: "Violent rain showers",
+        85: "Slight snow showers", 86: "Heavy snow showers",
+        95: "Thunderstorm", 96: "Thunderstorm with slight hail", 99: "Thunderstorm with heavy hail"
+    }
+    return wmo_codes.get(code, "Unknown")
 
 def get_area_weather(lat, lon, start_date, end_date):
 
@@ -75,7 +91,7 @@ def get_area_weather(lat, lon, start_date, end_date):
 
 # print("\n--- Vreme pe zone ---\n")
 
-df_area = get_area_weather(45.6427, 25.5887, "2026-04-01", "2026-04-02")
+df_area = get_area_weather(45.6427, 25.5887, "2026-04-01", "2026-04-05")
 for area, weather_list in df_area.items():
     print(f"Zona: {area}")
     for weather in weather_list:

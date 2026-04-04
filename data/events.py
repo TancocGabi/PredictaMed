@@ -1,8 +1,11 @@
 import requests
+from data_class.eventsData import EventsData
 
+###nu uita nu lasa aici
 api_key1 = "ZGAvkjKU7f1GfWaNLRgX9c_ISOYXKQ8UY0hlqaiv"
 
 
+#Trimite lista de evenimente
 def get_romania_events(lat, lon, api_key, start_date="2026-04-01", end_date="2026-04-30"):
     url = "https://api.predicthq.com/v1/events/"
     
@@ -20,29 +23,28 @@ def get_romania_events(lat, lon, api_key, start_date="2026-04-01", end_date="202
         "rank.gte": 60,
         "phq_attendance.gte": 5000,
         "limit": 50
-        # NOTA: Daca folosesti 'within', poti scoate 'country=RO' pentru a vedea 
-        # daca filtrarea geografica devine prioritara.
     }
     
     response = requests.get(url, headers=headers, params=params)
-    
+
+
     if response.status_code == 200:
         raw_results = response.json().get('results', [])
         clean_events = []
 
         for event in raw_results:
-            # Extragem doar "esența" pentru modelul nostru de AI
-            clean_event = {
-                "titlu": event.get("title"),
-                "categorie": event.get("category"),
-                "data_start": event.get("start_local"),
-                "estimare_participanti": event.get("phq_attendance", 0),
-                "nivel_importanta": event.get("rank", 0),
-                "locatie_nume": event.get("geo", {}).get("address", {}).get("formatted_address", "N/A"),
-                # Adaugam etichete specifice (ex: 'rock', 'soccer') pentru contextul medical
-                "tip_detaliat": [label['label'] for label in event.get('phq_labels', [])]
-            }
-            clean_events.append(clean_event)
+
+
+            event_data = EventsData(
+                titlu=event.get("title"),
+                categorie=event.get("category"),
+                data_start=event.get("start_local"),
+                estimare_participanti=event.get("phq_attendance", 0),
+                nivel_importanta=event.get("rank", 0),
+                locatie_nume=event.get("geo", {}).get("address", {}).get("formatted_address", "N/A"),
+                tip_detaliat=[label['label'] for label in event.get('phq_labels', [])]
+            )
+            clean_events.append(event_data)
         
         return clean_events
     else:
@@ -51,5 +53,7 @@ def get_romania_events(lat, lon, api_key, start_date="2026-04-01", end_date="202
 
 #Testem pe Bucuresti
 
-response = get_romania_events(44.4659572,26.0740855, api_key1, "2026-04-01", "2026-04-10")
-print (response)
+# response = get_romania_events(44.4659572,26.0740855, api_key1, "2026-04-01", "2026-05-10")
+
+# for event in response:
+#     print(event)
