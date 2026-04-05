@@ -123,13 +123,13 @@ if st.session_state.analiza_vizibila:
     if predict_btn:
         with st.spinner('Se procesează datele de risc...'):
             time.sleep(1.2) 
-            
     risc = 82 if normalize_text(oras_introdus) in ["constanta", "brasov", "bucuresti"] else 38
 
     tab_simulator, = st.tabs(["🤖 Simulator What-If"])
     with tab_simulator:
         st.markdown("#### Simulator de Criză (What-If)")
-        st.info("Introduceți un scenariu ipotetic pentru a vedea cum se modifică indicatorii de mai sus.")
+        st.info(f"Analizăm riscul pentru {spital_selectat} în {oras_afisare} la data de {data_selectata}...")
+
         
         for mesaj in st.session_state.istoric_chat:
             with st.chat_message(mesaj["rol"]):
