@@ -154,4 +154,4 @@ def llm_process(lat, long, date):
     return response.text
 
 if __name__ == "__main__":
-    llm_process()
+    llm_process(45.6427, 25.5887, "2026-04-01")
