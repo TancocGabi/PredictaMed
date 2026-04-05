@@ -1,10 +1,11 @@
 import os
 import pandas as pd
 import numpy as np
+import plotly.express as px
 import time
 import unicodedata
 import streamlit as st
-from datetime import date, timedelta
+from core.ai_engine import llm_process
 
 # Inițializăm memoria chat-ului și starea analizei
 if "istoric_chat" not in st.session_state:
@@ -48,32 +49,54 @@ df_spitale = load_data()
 # --- STYLE (CSS MINIMAL) ---
 st.markdown("""
     <style>
+    /* Stilul general al cardului */
     [data-testid="stMetric"] {
         background-color: var(--secondary-background-color);
-        padding: 15px;
+        padding: 10px 15px;
         border-radius: 10px;
         border: 1px solid rgba(128, 128, 128, 0.2);
     }
+    
+    /* Micsorăm fontul valorii principale (ex: Gastroenterologie, 82%) */
+    [data-testid="stMetricValue"] {
+        font-size: 1.4rem !important; 
+        word-wrap: break-word !important; 
+        white-space: normal !important; 
+        line-height: 1.2 !important; 
+    }
+    
+    /* Ajustăm și textul gri de deasupra (titlul cardului) pentru proporție */
+    [data-testid="stMetricLabel"] {
+        font-size: 0.85rem !important;
+    }
+    
+    /* Stil pentru Tab-uri ca să arate mai premium */
     .stTabs [data-baseweb="tab-list"] {
         gap: 20px;
+    }
+    .stTabs [data-baseweb="tab"] {
+        padding-top: 10px;
+        padding-bottom: 10px;
     }
     </style>
     """, unsafe_allow_html=True)
 
 # --- SIDEBAR: INPUT DATE ---
 with st.sidebar:
-    st.header("📍 Configurare Raport")
-    st.markdown("Selectați parametrii pentru analiza de risc.")
+    st.header("📍 Selecție Locație")
+    st.markdown("Caută unitatea medicală pentru a evalua riscul de suprasolicitare.", help="Folosește denumirea orașului fără diacritice dacă dorești o căutare rapidă.")
     st.divider()
     
     def reseteaza_analiza():
         st.session_state.analiza_vizibila = False
         
-    oras_introdus = st.text_input("Oraș:", placeholder="ex: Bucuresti, Cluj", on_change=reseteaza_analiza).strip()
+    # Folosim placeholder în loc să aglomerăm eticheta
+    oras_introdus = st.text_input("Oraș:", placeholder="ex: Bucuresti, Cluj, Iasi", on_change=reseteaza_analiza).strip()
     
     spital_selectat = None
+    lat_curent = None
+    lon_curent = None
     oras_afisare = ""
-    data_selectata = date.today()
 
     if oras_introdus:
         oras_cautare = normalize_text(oras_introdus)
@@ -82,61 +105,130 @@ with st.sidebar:
         if not df_filtrat.empty:
             lista_spitale = sorted(df_filtrat['nume'].unique().tolist())
             spital_selectat = st.selectbox("Unitate Medicală:", lista_spitale, on_change=reseteaza_analiza)
+            
             oras_afisare = df_filtrat.iloc[0]['oras']
             
             if spital_selectat:
-                data_selectata = st.date_input(
-                    "Selectează Data Analizei:",
-                    value=date.today(),
-                    min_value=date.today(),
-                    max_value=date.today() + timedelta(days=14),
-                    on_change=reseteaza_analiza
-                )
+                spital_info = df_filtrat[df_filtrat['nume'] == spital_selectat].iloc[0]
+                lat_curent = spital_info['lat']
+                lon_curent = spital_info['long']
         else:
             st.warning(f"Nu am găsit rezultate pentru '{oras_introdus}'.")
     
     st.divider()
     buton_activ = spital_selectat is not None
+    # type="primary" face butonul să aibă culoarea principală a temei, ieșind în evidență
     predict_btn = st.button("🔍 Generează Raport de Risc", use_container_width=True, disabled=not buton_activ, type="primary")
 
+# Dacă s-a apăsat butonul, salvăm starea în memorie
 if predict_btn:
+    llm_process(lat_curent, lon_curent, )
     st.session_state.analiza_vizibila = True
+    
 
-# --- HEADER APLICAȚIE ---
+# --- HEADER APLICAȚIE (ECRAN PRINCIPAL) ---
 if spital_selectat:
     st.title(f"🏥 {spital_selectat}")
-    st.markdown(f"**📍 Locație:** {oras_afisare} | **📅 Data Raportului:** {data_selectata.strftime('%d %B %Y')}")
+    st.markdown(f"**📍 Locație:** {oras_afisare} | **Status:** Așteptare date contextuale")
     st.divider()
 else:
+    # ECRAN DE START (Când nu e nimic selectat)
     st.title("👋 Bine ai venit în CareSurge AI")
     st.markdown("""
-    **Platforma de Triaj Predictiv On-Demand**
+    **Platforma Geospațială de Triaj Predictiv On-Demand**
     
-    Acest sistem analizează contextul geospațial pentru a identifica riscurile de suprasolicitare medicală.
+    Acest sistem sprijină deciziile manageriale medicale prin combinarea datelor istorice cu factori de risc externi (ex: condiții meteo extreme, evenimente de risc).
     
-    👉 **Instrucțiuni:**
-    Selectați orașul, spitalul și data din meniul lateral pentru a genera raportul text-based.
+    👉 **Cum funcționează:**
+    1. Introdu orașul în meniul din stânga.
+    2. Selectează unitatea medicală dorită.
+    3. Generează raportul pentru a vedea analiza inteligentă pe departamente.
     """)
+    st.info("Aștept selecția ta pentru a începe procesarea datelor...")
 
 # --- LOGICĂ AFISARE REZULTATE ---
 if st.session_state.analiza_vizibila:
+    
+    # Spinner-ul stă deasupra tab-urilor ca să arate că toată aplicația lucrează
     if predict_btn:
-        with st.spinner('Se procesează datele de risc...'):
-            time.sleep(1.2) 
+        with st.spinner('Se preiau datele meteo și se rulează modelul ML...'):
+            time.sleep(1.5) 
             
     risc = 82 if normalize_text(oras_introdus) in ["constanta", "brasov", "bucuresti"] else 38
 
-    tab_simulator, = st.tabs(["🤖 Simulator What-If"])
-    with tab_simulator:
-        st.markdown("#### Simulator de Criză (What-If)")
-        st.info("Introduceți un scenariu ipotetic pentru a vedea cum se modifică indicatorii de mai sus.")
+    # --- CREAREA CELOR 2 TAB-URI ---
+    tab_dashboard, tab_simulator = st.tabs(["📊 Dashboard Principal", "🤖 Simulator What-If"])
+
+    # ====== TAB 1: DASHBOARD PRINCIPAL ======
+    with tab_dashboard:
+        col1, col2, col3, col4 = st.columns(4)
         
-        for mesaj in st.session_state.istoric_chat:
-            with st.chat_message(mesaj["rol"]):
-                st.markdown(mesaj["text"])
-                
-        scenariu = st.chat_input("Ex: Ce facem dacă avem o pană de curent generală?")
+        col1.metric("Scor Risc General", f"{risc}%", "+12%" if risc > 50 else "-2%")
+        col2.metric("Departament Critic", "Ortopedie" if risc > 50 else "Gastroenterologie")
+        col3.metric("Context Local", "Alertă Risc" if risc > 50 else "Stabil")
+        col4.metric("Personal Necesar", "+3 Medici" if risc > 50 else "Optim")
+
+        st.divider()
+
+        col_chart, col_explain = st.columns([2, 1])
+
+        with col_chart:
+            st.subheader("📈 Predicție Flux Pacienți (Următoarele 24h)")
+            chart_data = pd.DataFrame({
+                'Ora': [f"{i}:00" for i in range(24)],
+                'Pacienți Estimați': np.random.randint(15, 60 if risc > 50 else 30, size=24)
+            })
+            fig = px.area(chart_data, x='Ora', y='Pacienți Estimați', 
+                          color_discrete_sequence=['#ff4b4b' if risc > 50 else '#00cc96'])
+            fig.update_layout(margin=dict(l=0, r=0, t=0, b=0), height=300)
+            st.plotly_chart(fig, use_container_width=True)
+
+        with col_explain:
+            st.subheader("🔍 Explicație AI")
+            if risc > 50:
+                html_error = f"""
+                <div style="background-color: rgba(255, 75, 75, 0.1); border-left: 5px solid #ff4b4b; padding: 25px; border-radius: 5px;">
+                    <p style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; font-size: 1.3rem; line-height: 1.7; color: var(--text-color); margin: 0;">
+                        <strong style="color: #ff4b4b; font-size: 1.5rem;">🚨 Alertă Contextuală:</strong><br><br>
+                        Modelul a detectat o anomalie geospațială. Pe baza datelor de context pentru <strong>{oras_afisare}</strong>, se anticipează o suprasolicitare pe secția de <strong>Ortopedie</strong> din cauza condițiilor meteo severe preconizate.
+                    </p>
+                </div>
+                """
+                st.markdown(html_error, unsafe_allow_html=True)
+            else:
+                html_success = f"""
+                <div style="background-color: rgba(0, 204, 150, 0.1); border-left: 5px solid #00cc96; padding: 25px; border-radius: 5px;">
+                    <p style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; font-size: 1.3rem; line-height: 1.7; color: var(--text-color); margin: 0;">
+                        <strong style="color: #00cc96; font-size: 1.5rem;">✅ Status Optim:</strong><br><br>
+                        Parametrii pentru <strong>{oras_afisare}</strong> sunt stabili. Fluxul prognozat urmează trendul istoric normal al unității medicale.
+                    </p>
+                </div>
+                """
+                st.markdown(html_success, unsafe_allow_html=True)
+
+    # ====== TAB 2: SIMULATOR WHAT-IF ======
+    with tab_simulator:
+        st.markdown("#### Testează planurile de răspuns la criză")
+        st.markdown("Interacționează cu Agentul AI pentru a evalua rapid cum ar face față spitalul în situații extreme (ex: inundații, accidente multiple, lipsă bruscă de personal).")
+        st.divider()
+        
+        # Container pentru istoricul chat-ului (ca să nu se întindă urât)
+        chat_container = st.container()
+        with chat_container:
+            for mesaj in st.session_state.istoric_chat:
+                with st.chat_message(mesaj["rol"]):
+                    st.markdown(mesaj["text"])
+
+        # Căsuța de input a chat-ului
+        scenariu = st.chat_input("Ex: Ce se întâmplă dacă diseară are loc un accident în lanț pe autostradă?")
+
         if scenariu:
+            # Salvăm și afișăm întrebarea
             st.session_state.istoric_chat.append({"rol": "user", "text": scenariu})
-            st.session_state.istoric_chat.append({"rol": "assistant", "text": f"**Analiză pentru {spital_selectat}:** Scenariul de tip '{scenariu}' ar ridica riscul UPU la 95%. Recomandăm activarea generatoarelor și a protocolului de triaj manual."})
+            
+            # Simulăm un răspuns AI în funcție de input
+            raspuns_ai = f"**Analiză de impact pentru {spital_selectat}:**\n\nPe baza scenariului introdus (*\"{scenariu}\"*), modelul nostru prezice o epuizare a resurselor de la secția Primiri Urgențe în aproximativ **45 de minute**. \n\n👉 **Recomandare:** Activarea planului alb (suplimentare personal de gardă) și blocarea tuturor intervențiilor chirurgicale non-critice programate pentru următoarele 12 ore."
+            st.session_state.istoric_chat.append({"rol": "assistant", "text": raspuns_ai})
+            
+            # Reîncărcăm pagina pentru a afișa mesajele în tab-ul corect
             st.rerun()
