@@ -7,14 +7,14 @@ base_path = os.path.dirname(os.path.dirname(__file__))
 if base_path not in sys.path:
     sys.path.append(base_path)
 
-import csv_parser as csp
+from core import csv_parser as csp
 import pandas as pd
 from prophet import Prophet
 from google import genai
 from prophet.serialize import model_to_json, model_from_json
 import json
 from data.keys import Keys
-from api_parser import parse_api
+from core.api_parser import parse_api
 
 def prediction (date, medie):
     valoare_prezisa = date['yhat'].iloc[0]
