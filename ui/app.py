@@ -21,6 +21,8 @@ if "analiza_vizibila" not in st.session_state:
     st.session_state.analiza_vizibila = False
 if "what_if_response" not in st.session_state:
     st.session_state.what_if_response = None
+if "response" not in st.session_state:
+    st.session_state.response = None
 
 # --- CONFIGURARE PAGINĂ ---
 st.set_page_config(
@@ -121,7 +123,7 @@ with st.sidebar:
     predict_btn = st.button("🔍 Generează Raport de Risc", use_container_width=True, disabled=not buton_activ, type="primary")
 
 if predict_btn:
-    response = llm_process(lat_curenta, lon_curenta, data_selectata)
+    st.session_state.response = llm_process(lat_curenta, lon_curenta, data_selectata)
     st.session_state.analiza_vizibila = True
     st.session_state.what_if_response = None
 
@@ -151,7 +153,7 @@ if st.session_state.analiza_vizibila:
     tab_simulator, tab_what_if = st.tabs(["⚠️ Raport de Risc", "🔬 What-If Simulator"])
     with tab_simulator:
         st.markdown("#### Raport de Risc")
-        st.info(response)
+        st.info(st.session_state.response)
 
         
         for mesaj in st.session_state.istoric_chat:
