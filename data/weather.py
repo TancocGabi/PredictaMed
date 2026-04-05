@@ -42,15 +42,14 @@ def get_daily_weather(lat, lon, start_date, end_date):
                 temperature=(row['temperature_2m_max'] + row['temperature_2m_min']) / 2, # Medie
                 temperature_min=row['temperature_2m_min'],
                 temperature_max=row['temperature_2m_max'],
+                precipitation=row['precipitation_sum'],
                 humidity=row['relative_humidity_2m_max'],
                 wind_speed=row['windspeed_10m_max'],
                 weather_code=get_weather_description(row['weathercode']),
                 date_str=str(row['time'])
             )
             # Adaugam campuri extra daca clasa WeatherData permite, 
-            # pentru a nu pierde informatia despre precipitatii (critica pt triaj)
-            w_data.precipitation = row['precipitation_sum'] 
-            
+            # pentru a nu pierde informatia despre precipitatii (critica pt triaj)            
             weatherList.append(w_data)
         return weatherList
     return None
@@ -98,3 +97,8 @@ def get_area_weather(lat, lon, start_date, end_date):
 
 # print("\n--- Vreme pe zone ---\n")
 
+df_area = get_area_weather(45.6427, 25.5887, "2026-04-01", "2026-04-05")
+for area, weather_list in df_area.items():
+    print(f"Zona: {area}")
+    for weather in weather_list:
+        print(weather)
