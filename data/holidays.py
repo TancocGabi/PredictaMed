@@ -1,5 +1,13 @@
+import os
+import sys
 import requests
-from data_class.holidaysData import HolidaysData
+
+base_path = os.path.dirname(os.path.dirname(__file__))
+
+if base_path not in sys.path:
+    sys.path.append(base_path)
+
+from data.data_class.holidaysData import HolidaysData
 
 def get_romania_holidays(year=2026):
     # API gratuit, nu necesita cheie

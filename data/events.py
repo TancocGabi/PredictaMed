@@ -1,8 +1,14 @@
+import os
+import sys
 import requests
-from data_class.eventsData import EventsData
-from keys import Keys
 
-###nu uita nu lasa aici
+base_path = os.path.dirname(os.path.dirname(__file__))
+
+if base_path not in sys.path:
+    sys.path.append(base_path)
+
+from data.data_class.eventsData import EventsData
+from data.keys import Keys
 
 
 #Trimite lista de evenimente
@@ -49,11 +55,4 @@ def get_romania_events(lat, lon, api_key, start_date="2026-04-01", end_date="202
         return clean_events
     else:
         print(f"Eroare: {response.status_code}, {response.text}")
-        return None
-
-#Testem pe Bucuresti
-
-response = get_romania_events(44.4659572,26.0740855, Keys.EVENT_API_KEY, "2026-04-01", "2026-05-10")
-
-for event in response:
-    print(event)
+        return []
